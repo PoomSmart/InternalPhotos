@@ -1,0 +1,8 @@
+Package: org.thebigboss.internalphotos
+Name: InternalPhotos
+Depends: mobilesubstrate, firmware (>= 7.1), firmware (<< 8.0)
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Enable hidden Photos internal settings.
+Author: PoomSmart
+Section: Tweaks

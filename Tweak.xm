@@ -14,20 +14,20 @@
 + (void)presentSettingsController;
 @end
 
+extern "C" NSBundle *PLPhotoLibraryFrameworkBundle();
+NSString *const presentDebugNotificationKey = @"com.PS.InternalPhotos.presentDebugNotificationKey";
+
 static void showInternalSettings()
 {
-	[%c(PURootSettings) presentSettingsController];
+	if (isiOS71)
+		[%c(PURootSettings) presentSettingsController];
+	else if (isiOS70)
+		[[NSNotificationCenter defaultCenter] postNotificationName:presentDebugNotificationKey object:nil userInfo:nil];
 }
 
 static UIImage *internalGearImage()
 {
-	CGFloat screenScale = [[UIScreen mainScreen] scale];
-	NSString *path = nil;
-	if (screenScale == 0 || screenScale == 1)
-		path = @"/Library/Application Support/InternalPhotos/UIBarButtonItemGear.png";
-	else
-		path = [NSString stringWithFormat:@"/Library/Application Support/InternalPhotos/UIBarButtonItemGear@%lux.png", (unsigned long)(NSUInteger)screenScale];
-	return [[UIImage imageWithContentsOfFile:path] retain];
+	return [[UIImage imageNamed:@"UIBarButtonItemGear.png" inBundle:PLPhotoLibraryFrameworkBundle()] retain];
 }
 
 %hook PUAbstractAlbumListViewController
@@ -76,9 +76,41 @@ UIBarButtonItem *_btn;
 
 %end
 
+BOOL overrideInternal = NO;
+
+extern "C" BOOL CPIsInternalDevice();
+
+MSHook(BOOL, CPIsInternalDevice)
+{
+	return overrideInternal ? YES : _CPIsInternalDevice();
+}
+
+%hook NSUserDefaults
+
+- (BOOL)boolForKey:(NSString *)key
+{
+	return [key isEqualToString:@"PUEnableDoubleTapSettings"] ? YES : %orig;
+}
+
+%end
+
+%hook PLPhotosApplication
+
+- (void)applicationDidFinishLaunching:(id)arg1
+{
+	if (isiOS70)
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_statusBarDoubleTap:) name:presentDebugNotificationKey object:nil];
+	overrideInternal = YES;
+	%orig;
+	overrideInternal = NO;
+}
+
+%end
+
 %ctor
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	MSHookFunction(CPIsInternalDevice, $CPIsInternalDevice, &_CPIsInternalDevice);
 	%init;
 	[pool drain];
 }

@@ -6,5 +6,6 @@ include theos/makefiles/common.mk
 TWEAK_NAME = InternalPhotos
 InternalPhotos_FILES = Tweak.xm
 InternalPhotos_FRAMEWORKS = UIKit
+InternalPhotos_PRIVATE_FRAMEWORKS = AppSupport PhotoLibrary
 
 include $(THEOS_MAKE_PATH)/tweak.mk

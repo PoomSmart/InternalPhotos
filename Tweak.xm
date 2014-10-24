@@ -6,9 +6,9 @@
 - (UIBarButtonItem *)_internalButtonItem;
 @end
 
-/*@interface PUPhotosGridViewController : UIViewController
+@interface PUAlbumListViewController : UIViewController
 - (UIBarButtonItem *)_internalButtonItem;
-@end*/
+@end
 
 @interface PURootSettings
 + (void)presentSettingsController;
@@ -19,7 +19,7 @@ NSString *const presentDebugNotificationKey = @"com.PS.InternalPhotos.presentDeb
 
 static void showInternalSettings()
 {
-	if (isiOS71)
+	if (isiOS71Up)
 		[%c(PURootSettings) presentSettingsController];
 	else if (isiOS70)
 		[[NSNotificationCenter defaultCenter] postNotificationName:presentDebugNotificationKey object:nil userInfo:nil];
@@ -30,9 +30,9 @@ static UIImage *internalGearImage()
 	return [[UIImage imageNamed:@"UIBarButtonItemGear.png" inBundle:PLPhotoLibraryFrameworkBundle()] retain];
 }
 
-%hook PUAbstractAlbumListViewController
-
 UIBarButtonItem *_btn;
+
+%hook ALBUMCONTROLLER
 
 %new
 - (UIBarButtonItem *)_internalButtonItem
@@ -60,17 +60,21 @@ UIBarButtonItem *_btn;
 - (void)updateNavigationBarAnimated:(BOOL)animated
 {
 	%orig;
-	UINavigationItem *navigationItem = [self.navigationItem retain];
-	NSMutableArray *rightButtons = [[navigationItem.rightBarButtonItems retain] mutableCopy];
-	if (rightButtons == nil)
+	UINavigationItem *navigationItem = [[self navigationItem] retain];
+	NSArray *buttonItems = isiOS8 ? navigationItem.leftBarButtonItems : navigationItem.rightBarButtonItems;
+	NSMutableArray *buttons = [[buttonItems retain] mutableCopy];
+	if (buttons == nil)
 		return;
 	UIBarButtonItem *internalButton = [[self _internalButtonItem] retain];
-	if ([rightButtons containsObject:internalButton])
+	if ([buttons containsObject:internalButton])
 		return;
-	[rightButtons addObject:internalButton];
-	[navigationItem setRightBarButtonItems:rightButtons animated:animated];
+	[buttons addObject:internalButton];
+	if (isiOS8)
+		[navigationItem setLeftBarButtonItems:buttons animated:animated];
+	else
+		[navigationItem setRightBarButtonItems:buttons animated:animated];
 	[navigationItem release];
-	[rightButtons release];
+	[buttons release];
 	[internalButton release];
 }
 
@@ -111,6 +115,6 @@ MSHook(BOOL, CPIsInternalDevice)
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	MSHookFunction(CPIsInternalDevice, $CPIsInternalDevice, &_CPIsInternalDevice);
-	%init;
+	%init(ALBUMCONTROLLER = isiOS8 ? objc_getClass("PUAlbumListViewController") : objc_getClass("PUAbstractAlbumListViewController"));
 	[pool drain];
 }

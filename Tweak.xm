@@ -2,18 +2,6 @@
 #import <objc/runtime.h>
 #import "../PS.h"
 
-@interface PUAbstractAlbumListViewController : UIViewController
-- (UIBarButtonItem *)_internalButtonItem;
-@end
-
-@interface PUAlbumListViewController : UIViewController
-- (UIBarButtonItem *)_internalButtonItem;
-@end
-
-@interface PURootSettings
-+ (void)presentSettingsController;
-@end
-
 extern "C" NSBundle *PLPhotoLibraryFrameworkBundle();
 NSString *const presentDebugNotificationKey = @"com.PS.InternalPhotos.presentDebugNotificationKey";
 
